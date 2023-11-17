@@ -66,11 +66,12 @@ let round_dfrac d x =
 let rec typeof env = function
   | Int _ -> TInt
   | Bool _ -> TBool
+  | Float _ -> TFloat
   | Var x -> lookup env x
   | Let (x, t ,e1, e2) -> typeof_let env x t e1 e2
   | Binop (bop, e1, e2) -> typeof_bop env bop e1 e2
   | If (e1, e2, e3) -> typeof_if env e1 e2 e3
-  | _ -> failwith "TODO"
+  (*| _ -> failwith "TODO"         no idea figure this out lol*)
   
 (** Helper function for [typeof]. *)
 and typeof_let env x t e1 e2 = 
@@ -88,6 +89,15 @@ and typeof_bop env bop e1 e2 =
   | Add, TInt, TInt 
   | Mult, TInt, TInt -> TInt
   | Leq, TInt, TInt -> TBool
+  | Subtract, TInt, TInt
+  | Divide, TInt, TInt -> TInt
+  | Geq, TInt, TInt -> TBool
+  | FAdd, TFloat, TFloat
+  | FMult, TFloat, TFloat -> TFloat
+  | FSubtract, TFloat, TFloat
+  | FDivide, TFloat, TFloat -> TFloat
+  | FGeq, TFloat, TFloat -> TBool (*remove?*)
+  | FLeq, TFloat, TFloat -> TBool (*remove?*)
   | _ -> failwith bop_err
   
 (** Helper function for [typeof]. *)
@@ -114,6 +124,7 @@ let rec subst e v x = match e with
   | Var y -> if x = y then v else e
   | Bool _ -> e
   | Int _ -> e
+  | Float _ -> e
   | Binop (bop, e1, e2) -> Binop (bop, subst e1 v x, subst e2 v x)
   | Let (y, t, e1, e2) ->
     let e1' = subst e1 v x in
@@ -122,16 +133,16 @@ let rec subst e v x = match e with
     else Let (y, t, e1', subst e2 v x)
   | If (e1, e2, e3) -> 
     If (subst e1 v x, subst e2 v x, subst e3 v x)
-  | _ -> failwith "TODO"
+  (*| _ -> failwith "TODO" *)
   
 (** [eval e] the [v]such that [e ==> v]. *)
 let rec eval (e : expr) : expr = match e with
-  | Int _ | Bool _ -> e
+  | Int _ | Bool _ -> e | Float _ -> e
   | Var _ -> failwith unbound_var_err
   | Binop (bop, e1, e2) -> eval_bop bop e1 e2
   | Let (x, _, e1, e2) -> subst e2 (eval e1) x|> eval
   | If (e1, e2, e3) -> eval_if e1 e2 e3
-  | _ -> failwith "TODO"
+  (*| _ -> failwith "TODO" *)
 
 (** [eval_let x e1 e2] is the [v] such that [let x = e1 in e2 ==> v]. *) 
 and eval_let x e1 e2 = 
@@ -145,6 +156,13 @@ and eval_bop bop e1 e2 =
   | Add, Int a, Int b -> Int (a + b)
   | Mult, Int a, Int b -> Int (a * b)
   | Leq , Int a, Int b -> Bool (a <= b)
+  | Subtract, Int a, Int b -> Int (a - b)
+  | Divide, Int a, Int b -> Int (a / b)
+  | Geq, Int a, Int b -> Bool (a >= b)
+  | FAdd, Float a, Float b -> Float (round_dfrac 2 a +. b)
+  | FMult, Float a, Float b -> Float (round_dfrac 2 a *. b)
+  | FSubtract, Float a, Float b -> Float (round_dfrac 2 a -. b)
+  | FDivide, Float a, Float b -> Float (round_dfrac 2 a /. b)
   | _ -> failwith bop_err
 
 (** [eval_if e1 e2 e3] is the [v] such that [if e1 then e2 ==> v]. *) 
