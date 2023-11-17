@@ -17,8 +17,6 @@ open Ast
 %token FMINUS
 %token FDIVIDE
 %token FPLUS
-%token FGEQ
-%token FLEQ
 %token LPAREN
 %token RPAREN
 %token LET
@@ -35,18 +33,20 @@ open Ast
 
 %nonassoc IN
 %nonassoc ELSE
-%left FLEQ
-%left FGEQ
 %left LEQ
 %left GEQ
-%left PLUS
+
+
 %left MINUS
+%left PLUS
 %left DIVIDE
 %left TIMES
-%left FPLUS
+
 %left FMINUS
+%left FPLUS
 %left FDIVIDE
 %left FTIMES
+
 
 
 %start <Ast.expr> prog
@@ -73,8 +73,6 @@ expr:
     | e1 = expr; FDIVIDE; e2 = expr { Binop (FDivide, e1, e2) }
     | e1 = expr; FMINUS; e2 = expr { Binop (FSubtract, e1, e2) }
     | e1 = expr; GEQ; e2 = expr { Binop (Geq, e1, e2) }
-    | e1 = expr; FLEQ; e2 = expr { Binop (Leq, e1, e2) }
-    | e1 = expr; FGEQ; e2 = expr { Binop (Geq, e1, e2) }
   	| LET; x = ID; COLON; t = typ; EQUALS; e1 = expr; IN; e2 = expr 
 		{ Let (x, t, e1, e2) }
   	| IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr { If (e1, e2, e3) }
